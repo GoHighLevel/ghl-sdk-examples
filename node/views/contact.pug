@@ -1,0 +1,174 @@
+doctype html
+html(lang="en")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport", content="width=device-width, initial-scale=1.0")
+    title Contact Information
+    style.
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 600px;
+        margin: 50px auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .contact-card {
+        background-color: white;
+        border-radius: 8px;
+        padding: 30px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      }
+      .contact-header {
+        text-align: center;
+        margin-bottom: 30px;
+        color: #333;
+      }
+      .contact-info {
+        display: grid;
+        gap: 15px;
+      }
+      .info-item {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        border-left: 4px solid #007bff;
+      }
+      .info-label {
+        font-weight: bold;
+        min-width: 120px;
+        color: #555;
+      }
+      .info-value {
+        color: #333;
+        flex: 1;
+      }
+      .token-value {
+        font-family: 'Courier New', monospace;
+        font-size: 12px;
+        word-break: break-all;
+        line-height: 1.4;
+        background-color: #f1f3f4;
+        padding: 8px;
+        border-radius: 4px;
+        border: 1px solid #e0e0e0;
+        max-height: 120px;
+        overflow-y: auto;
+      }
+      .back-btn {
+        margin-top: 20px;
+        text-align: center;
+      }
+      .back-btn a {
+        display: inline-block;
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+        transition: background-color 0.3s;
+      }
+      .back-btn a:hover {
+        background-color: #0056b3;
+      }
+
+  body
+    .contact-card
+      .contact-header
+        h1 Contact Information
+        if contact
+          h2= `${contact.firstName} ${contact.lastName}`
+        else
+          h2 No Contact Found
+      
+      if contact
+        .contact-info
+          .info-item
+            .info-label First Name:
+            .info-value= contact.firstName || 'Not provided'
+          
+          .info-item
+            .info-label Last Name:
+            .info-value= contact.lastName || 'Not provided'
+          
+          .info-item
+            .info-label Email:
+            .info-value= contact.email || 'Not provided'
+          
+          .info-item
+            .info-label Phone:
+            .info-value= contact.phone || 'Not provided'
+          
+          .info-item
+            .info-label Contact ID:
+            .info-value= contact.id || 'Not provided'
+          
+          .info-item
+            .info-label Location ID:
+            .info-value= contact.locationId || 'Not provided'
+          
+          if allLocations
+            .info-item
+              .info-label All Locations:
+              .info-value
+                div(style="margin-bottom: 15px; padding: 10px; background-color: #f8f9fa; border-radius: 5px; border: 1px solid #e0e0e0;")
+                  div
+                    strong Name: 
+                    span= allLocations.name || 'Not provided'
+                  div
+                    strong Address: 
+                    span= allLocations.address || 'Not provided'
+                  div
+                    strong City: 
+                    span= allLocations.city || 'Not provided'
+          else
+            .info-item
+              .info-label All Locations:
+              .info-value No locations available
+    
+          .info-item
+            .info-label Country:
+            .info-value= contact.country || 'Not provided'
+      else
+        p.error-message No contact data available
+      
+      // Token Information Section
+      if tokens
+        .contact-header
+          h2 Token Information
+        
+        .contact-info
+          // Agency Token Section
+          if tokens.agencyToken && Object.keys(tokens.agencyToken).length > 0
+            .info-item
+              .info-label Agency Access Token:
+              .info-value.token-value= tokens.agencyToken.access_token || 'Not available'
+            
+            .info-item
+              .info-label Agency Refresh Token:
+              .info-value.token-value= tokens.agencyToken.refresh_token || 'Not available'
+            
+          else
+            .info-item
+              .info-label Agency Token:
+              .info-value Not authorized
+          
+          // Location Token Section
+          if tokens.locationToken && Object.keys(tokens.locationToken).length > 0
+            .info-item
+              .info-label Location Access Token:
+              .info-value.token-value= tokens.locationToken.access_token || 'Not available'
+            
+            .info-item
+              .info-label Location Refresh Token:
+              .info-value.token-value= tokens.locationToken.refresh_token || 'Not available'
+            
+          else
+            .info-item
+              .info-label Location Token:
+              .info-value Not authorized
+      
+      .back-btn
+        a(href="/") Back to Home
+        a(href="/refresh-token" style="margin-left: 10px; background-color: #28a745;") 🔄 Refresh Tokens 
