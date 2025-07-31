@@ -108,6 +108,10 @@ html(lang="en")
             .info-label Location ID:
             .info-value= contact.locationId || 'Not provided'
           
+          .info-item
+            .info-label Country:
+            .info-value= contact.country || 'Not provided'
+          
           if allLocations
             .info-item
               .info-label All Locations:
@@ -122,14 +126,6 @@ html(lang="en")
                   div
                     strong City: 
                     span= allLocations.city || 'Not provided'
-          else
-            .info-item
-              .info-label All Locations:
-              .info-value No locations available
-    
-          .info-item
-            .info-label Country:
-            .info-value= contact.country || 'Not provided'
       else
         p.error-message No contact data available
       

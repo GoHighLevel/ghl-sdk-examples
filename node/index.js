@@ -230,4 +230,24 @@ app.use('/refresh-token', async (req, res) => {
   }
 });
 
+app.use('/pit', async (req, res) => {
+  const privateIntegrationToken = process.env.PRIVATE_INTEGRATION_TOKEN;
+  if (!privateIntegrationToken) {
+    return res.redirect('/')
+  }
+  ghl.setPrivateIntegrationToken(privateIntegrationToken);
+  try {
+    const contact = await ghl.contacts.getContact({
+      contactId: CONTACT_ID,
+    });
+    console.log('Contact', contact);
+      res.render('contact', {
+        contact: contact?.contact
+      });
+  } catch (error) {
+    console.error('Error fetching contact:', error);
+    res.redirect('/')
+  }
+});
+
 app.listen(PORT, () => console.log(`Listening on http://localhost:${PORT}`));
