@@ -21,8 +21,6 @@ const GRANT_TYPES = {
   AUTHORIZATION_CODE: 'authorization_code',
   REFRESH_TOKEN: 'refresh_token',
 };
-const COMPANY_ID = process.env.COMPANY_ID;
-const LOCATION_ID = process.env.LOCATION_ID;
 const CONTACT_ID = process.env.CONTACT_ID;
 
 const app = express();
@@ -46,13 +44,15 @@ app.use(
 );
 
 const checkEnv = (req, res, next) => {
-  if (_.isNil(CLIENT_ID))
+  if (_.startsWith(req.url, '/error-page')) return next();
+
+  if (_.isNil(CLIENT_ID) || _.isEmpty(CLIENT_ID))
     return res.redirect(
-      '/error?msg=Please set HUBSPOT_CLIENT_ID env variable to proceed'
+      '/error-page?msg=Please set CLIENT_ID env variable to proceed'
     );
-  if (_.isNil(CLIENT_SECRET))
+  if (_.isNil(CLIENT_SECRET) || _.isEmpty(CLIENT_SECRET))
     return res.redirect(
-      '/error?msg=Please set HUBSPOT_CLIENT_SECRET env variable to proceed'
+      '/error-page?msg=Please set CLIENT_SECRET env variable to proceed'
     );
 
   next();
@@ -73,21 +73,29 @@ app.get('/', async (req, res) => {
     }
 
     let contactResponse = null;
+    let locationId;
     if (Object.keys(tokenStore.locationToken).length) {
-      console.log('calling get contacts api with location token');
-      contactResponse = await ghl.contacts.getContact({
-        contactId: CONTACT_ID,
+      locationId = tokenStore.locationToken.locationId;
+      const contacts = await ghl.contacts.getContacts({
+        locationId: locationId
       });
+      console.log('Contacts', contacts.contacts);
+      console.log('calling get contacts api with location token');
+      if (contacts.contacts.length) {
+      contactResponse = await ghl.contacts.getContact({
+          contactId: contacts.contacts[0]?.id,
+        });
+      }
     }
 
     let allLocations = null;
     
-    if (Object.keys(tokenStore.agencyToken).length && Object.keys(tokenStore.locationToken).length) {
+    if (locationId && Object.keys(tokenStore.agencyToken).length && Object.keys(tokenStore.locationToken).length) {
       try {
         // when agency and location both token are available, you can choose which token to use while making api call
         const location = await ghl.locations.getLocation(
           {
-            locationId: LOCATION_ID,
+            locationId: locationId,
           },
           { preferredTokenType: 'agency' } // using agency token to fetch location details
         );
@@ -248,6 +256,12 @@ app.use('/pit', async (req, res) => {
     console.error('Error fetching contact:', error);
     res.redirect('/')
   }
+});
+
+app.use('/error-page', (req, res) => {
+  res.render('error', {
+    error: req.query.msg
+  });
 });
 
 app.listen(PORT, () => console.log(`Listening on http://localhost:${PORT}`));
