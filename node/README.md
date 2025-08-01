@@ -1,21 +1,16 @@
-# GHL SDK Example with getContact Implementation
+# GHL SDK Node.js Sample Applications
 
-This project demonstrates how you can get redirect url where you can install the application and after that how to get the access token and refresh token.
+This directory contains sample Node.js applications demonstrating different authentication methods and integration patterns with the GoHighLevel (GHL) SDK.
 
-## Installation
+## Overview
 
-```bash
-npm install
-```
+The GoHighLevel SDK supports multiple authentication methods for different use cases. This collection of sample applications shows you how to implement each authentication method and integrate with the GHL API.
 
-## Environment Variables
-You can check .env.example file for sample env variables which are required. Create .env file and add all values from .env.example
+## Sample Applications
 
-## Running the Example
+### 🔐 [Private Integration Token (PIT) Sample](./sample-app-pit/)
+### 🔗 [OAuth Sample](./sample-app-oauth/)
 
-### JavaScript
-```bash
-npm start
-# or
-node index.js
-```
+## License
+
+These sample applications are provided as examples and learning resources. Check individual files for specific license information. 

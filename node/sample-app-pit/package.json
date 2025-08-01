@@ -1,0 +1,25 @@
+{
+  "name": "highlevel-pit",
+  "version": "1.0.0",
+  "description": "Use HighLevel SDK usign PIT token",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "highlevel",
+    "sdk",
+    "pit"
+  ],
+  "author": "HighLevel",
+  "license": "ISC",
+  "dependencies": {
+    "@ghl/api-client": "git+https://github.com/GoHighLevel/highlevel-api-sdk.git",
+    "axios": "^1.11.0",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "loadsh": "^0.0.4",
+    "lodash": "^4.17.21",
+    "pug": "^3.0.3"
+  }
+}
