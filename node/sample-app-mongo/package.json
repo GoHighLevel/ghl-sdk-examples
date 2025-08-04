@@ -14,7 +14,7 @@
   "author": "HighLevel",
   "license": "ISC",
   "dependencies": {
-    "@ghl/api-client": "file:///Users/karankaneria/code/ghl/highlevel-api-sdk",
+    "@ghl/api-client": "git+https://github.com/GoHighLevel/highlevel-api-sdk.git",
     "axios": "^1.11.0",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",

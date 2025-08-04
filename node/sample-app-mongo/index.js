@@ -15,7 +15,7 @@ const ghl = new HighLevel({
     process.env.MONGO_DB_NAME,
     process.env.COLLECTION_NAME
   ),
-  logLevel: LogLevel.WARN
+  logLevel: LogLevel.DEBUG
 });
 
 const app = express();
