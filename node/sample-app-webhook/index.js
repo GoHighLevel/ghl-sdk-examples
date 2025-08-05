@@ -66,7 +66,7 @@ app.get('/install', (req, res) => {
   const redirectUrl = ghl.oauth.getAuthorizationUrl(
     CLIENT_ID,
     `http://localhost:${PORT}/oauth-callback`,
-    'contacts.readonly contacts.write'
+    'contacts.readonly contacts.write locations.readonly'
   );
   console.log('Redirect URL', redirectUrl);
   return res.redirect(redirectUrl);
@@ -110,10 +110,22 @@ app.get('/contact', async (req, res) => {
     if (!locationToken) {
       return res.redirect('/error-page?msg=Please authorize the application to proceed');
     }
-    const resourceId = locationToken.locationId
+    const locationId = locationToken.onlocationId
+    const location = await ghl.locations.getLocation(
+      {
+        locationId
+      },
+      {
+        preferredTokenType: 'location'
+      }
+    )
+    if (!location?.location) {
+      return res.redirect('/error-page?msg=No location found');
+    }
+    console.log('Location here:', location.location);
     const contacts = await ghl.contacts.getContacts(
       {
-        locationId: resourceId,
+        locationId,
         limit: 5
       },
     );
@@ -128,7 +140,7 @@ app.get('/contact', async (req, res) => {
       },
       {
         headers: {
-          locationId: resourceId // need to pass locationId here so that SDK can fetch the token for the location (as it is not part of body or query parameter)
+          locationId // need to pass locationId here so that SDK can fetch the token for the location (as it is not part of body or query parameter)
         },
       }
     );
