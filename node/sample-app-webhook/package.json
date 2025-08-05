@@ -1,0 +1,29 @@
+{
+  "name": "highlevel-webhook-app",
+  "version": "1.0.0",
+  "description": "Use HighLevel SDK to implement webhook app",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "highlevel",
+    "webhook",
+    "sdk"
+  ],
+  "author": "HighLevel",
+  "license": "ISC",
+  "dependencies": {
+    "@ghl/api-client": "file://Users/karankaneria/code/ghl/highlevel-api-sdk",
+    "axios": "^1.11.0",
+    "body-parser": "^2.2.0",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "loadsh": "^0.0.4",
+    "lodash": "^4.17.21",
+    "pug": "^3.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.1.0"
+  }
+}
