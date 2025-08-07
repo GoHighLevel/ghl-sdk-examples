@@ -110,7 +110,7 @@ app.get('/contact', async (req, res) => {
     if (!locationToken) {
       return res.redirect('/error-page?msg=Please authorize the application to proceed');
     }
-    const locationId = locationToken.onlocationId
+    const locationId = locationToken.locationId
     const location = await ghl.locations.getLocation(
       {
         locationId
