@@ -1,4 +1,4 @@
-const { SessionStorage } = require('@ghl/api-client');
+const { SessionStorage } = require('@highlevel/api-client');
 const Redis = require('redis');
 
 /**

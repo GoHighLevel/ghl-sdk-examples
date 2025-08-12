@@ -1,6 +1,6 @@
 # GHL SDK - Redis Storage Sample
 
-This sample demonstrates using Redis as a storage backend for GHL SDK session and token management. You can implement your own storage class which should extend SessionStorage from `@ghl/api-client`
+This sample demonstrates using Redis as a storage backend for GHL SDK session and token management. You can implement your own storage class which should extend SessionStorage from `@highlevel/api-client`
 
 ## Overview
 
@@ -38,7 +38,7 @@ Instead of using the default in-memory storage or mongo db storage, this impleme
 ## Usage
 
 ```javascript
-const { HighLevel } = require('@ghl/api-client');
+const { HighLevel } = require('@highlevel/api-client');
 const RedisStorage = require('./storage/redis-storage');
 
 // Initialize Redis storage

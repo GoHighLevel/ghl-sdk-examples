@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const _ = require('lodash');
-const { HighLevel } = require('@ghl/api-client');
+const { HighLevel } = require('@highlevel/api-client');
 const RedisStorage = require('./storage/redis-storage');
 
 const PORT = process.env.PORT || 3002;
