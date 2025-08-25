@@ -1,9 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const _ = require('lodash');
-const { HighLevel, LogLevel } = require('@highlevel/api-client'); 
+const { HighLevel, LogLevel, MongoDBSessionStorage } = require('@gohighlevel/api-client'); 
 const bodyParser = require('body-parser');
-const { MongoDBSessionStorage } = require('@highlevel/api-client');
 
 const PORT = process.env.PORT || 3004;
 const CLIENT_ID = process.env.CLIENT_ID;
