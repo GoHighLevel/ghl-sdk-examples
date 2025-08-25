@@ -39,7 +39,7 @@ To enable the default webhook execution provided by the SDK, add these 2 lines t
 ```javascript
 const express = require('express');
 const bodyParser = require('body-parser');
-const { HighLevel } = require('@highlevel/api-client');
+const { HighLevel } = require('@gohighlevel/api-client');
 
 const app = express();
 const ghl = new HighLevel({

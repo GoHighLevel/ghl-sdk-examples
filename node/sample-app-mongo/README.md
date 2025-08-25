@@ -37,7 +37,7 @@ Instead of using the default in-memory storage, this implementation uses MongoDB
 ## Usage
 
 ```javascript
-const { HighLevel, MongoSessionStorage } = require('@highlevel/api-client');
+const { HighLevel, MongoSessionStorage } = require('@gohighlevel/api-client');
 
 // Initialize MongoDB storage
 const mongoStorage = new MongoSessionStorage({
