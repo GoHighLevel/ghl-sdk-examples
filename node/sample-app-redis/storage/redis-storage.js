@@ -93,7 +93,8 @@ class RedisStorage extends SessionStorage {
         resourceId,
         clientId: this.clientId,
         createdAt: Date.now(),
-        updatedAt: Date.now()
+        updatedAt: Date.now(),
+        expire_at: this.calculateExpireAt(sessionData.expires_in) // this will add the expiration time of the session
       };
 
       // Store with TTL
