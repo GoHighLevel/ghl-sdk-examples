@@ -1,14 +1,15 @@
-# GHL SDK - Python Webhook Sample App
+# GHL SDK - Python Webhook Sample App (Django)
 
-This sample application demonstrates how to use the GoHighLevel Python SDK and use webhooks to manage `INSTALL` and `UNINSTALL` events. If you are using any storage to store tokens and use webhooks, based on the event it will automatically generate token for you and will store it. If the token is store, SDK will refresh it automatically. 
+This sample application demonstrates how to use the GoHighLevel Python SDK with Django and use webhooks to manage `INSTALL` and `UNINSTALL` events. If you are using any storage to store tokens and use webhooks, based on the event it will automatically generate token for you and will store it. If the token is stored, SDK will refresh it automatically.
 
 ## Overview
 
-This is a Python/Flask application that shows how to:
+This is a Python/Django application that shows how to:
 - Implement OAuth 2.0 flow with GoHighLevel
-- Handle OAuth callbacks and token management using SQL
+- Handle OAuth callbacks and token management using MongoDB
 - Use OAuth tokens to access the GHL API
 - Display token information and make authenticated API calls
+- Handle webhooks for automatic token management
 
 ## Installation
 
@@ -24,11 +25,12 @@ This is a Python/Flask application that shows how to:
 
 3. **Set up environment variables**
 
-   Create a `.env` file in the root directory and copy `.env.example` and add values.
-
-## Running the Application
-
-1. **Start the server**
+   Create a `.env` file in the root directory and copy `.env.example` and add values:
    ```bash
-   python app.py
+   CLIENT_ID=your_client_id
+   CLIENT_SECRET=your_client_secret
+   PORT=3003
+   MONGO_URL=mongodb://localhost:27017
+   MONGO_DB_NAME=local
+   COLLECTION_NAME=tokens
    ```

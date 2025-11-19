@@ -91,34 +91,34 @@
       <div class="contact-header">
         <div class="contact-icon">👤</div>
         <div class="contact-title">Contact Information</div>
-        <div class="contact-subtitle">Retrieved using OAuth token</div>
+        <div class="contact-subtitle">Retrieved using Private Integration Token</div>
       </div>
 
       {% if contact %}
         <div class="contact-info">
           <div class="info-item">
             <div class="info-label">First Name:</div>
-            <div class="info-value">{{ contact.firstName|default:'Not provided' }}</div>
+            <div class="info-value">{{ contact.firstName or 'Not provided' }}</div>
           </div>
 
           <div class="info-item">
             <div class="info-label">Last Name:</div>
-            <div class="info-value">{{ contact.lastName|default:'Not provided' }}</div>
+            <div class="info-value">{{ contact.lastName or 'Not provided' }}</div>
           </div>
 
           <div class="info-item">
             <div class="info-label">Email:</div>
-            <div class="info-value">{{ contact.email|default:'Not provided' }}</div>
+            <div class="info-value">{{ contact.email or 'Not provided' }}</div>
           </div>
 
           <div class="info-item">
             <div class="info-label">Country:</div>
-            <div class="info-value">{{ contact.country|default:'Not provided' }}</div>
+            <div class="info-value">{{ contact.country or 'Not provided' }}</div>
           </div>
 
           <div class="info-item">
             <div class="info-label">Location:</div>
-            <div class="info-value">{{ contact.locationId|default:'Not provided' }}</div>
+            <div class="info-value">{{ contact.locationId or 'Not provided' }}</div>
           </div>
         </div>
       {% endif %}
