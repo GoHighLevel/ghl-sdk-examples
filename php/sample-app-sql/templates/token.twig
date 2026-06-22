@@ -127,6 +127,7 @@
         </div>
         
         {% if token %}
+            {% set resolvedLocationId = locationId|default(token.location_id) %}
             <div class="token-info">
                 {% if token.access_token %}
                     <div class="info-item">
@@ -149,17 +150,17 @@
                     </div>
                 {% endif %}
                 
-                {% if token.location_id %}
+                {% if resolvedLocationId %}
                     <div class="info-item">
                         <div class="info-label">Location ID</div>
-                        <div class="info-value short">{{ token.location_id }}</div>
+                        <div class="info-value short">{{ resolvedLocationId }}</div>
                     </div>
                 {% endif %}
             </div>
-            
+
             <div class="action-buttons">
-                <a class="btn btn-primary" href="/contact?resourceId={{ token.location_id }}">👤 Show Contact</a>
-                <a class="btn btn-primary" href="/refresh-token?resourceId={{ token.location_id }}">🔄 Refresh Token</a>
+                <a class="btn btn-primary" href="/contact?resourceId={{ resolvedLocationId }}">👤 Show Contact</a>
+                <a class="btn btn-primary" href="/refresh-token?resourceId={{ resolvedLocationId }}">🔄 Refresh Token</a>
                 <a class="btn btn-secondary" href="/">← Back to Home</a>
             </div>
         {% else %}
