@@ -31,8 +31,7 @@ $config = [
     'mongo_db_name' => $_ENV['MONGO_DB_NAME'] ?? 'ghl_sessions',
     'collection_name' => $_ENV['COLLECTION_NAME'] ?? 'sessions',
     'debug' => ($_ENV['DEBUG'] ?? 'false') === 'true',
-    'log_level' => $_ENV['LOG_LEVEL'] ?? 'info',
-    'webhook_public_key' => $_ENV['WEBHOOK_PUBLIC_KEY'] ?? ''
+    'log_level' => $_ENV['LOG_LEVEL'] ?? 'info'
 ];
 
 // Create Slim app
@@ -117,7 +116,7 @@ $app->get('/install', function (Request $request, Response $response, array $arg
         $redirectUrl = $ghl->oauth->getAuthorizationUrl(
             $config['client_id'],
             "http://localhost:{$config['port']}/oauth-callback",
-            'contacts.readonly contacts.write voice-ai-dashboard.readonly'
+            'contacts.readonly contacts.write voice-ai-dashboard.readonly oauth.write oauth.readonly'
         );
 
         error_log('Redirect URL: ' . $redirectUrl);
@@ -138,31 +137,134 @@ $app->get('/oauth-callback', function (Request $request, Response $response, arr
     }
 
     try {
+        // v3 OAuth token endpoint expects camelCase body fields
         $accessToken = $ghl->oauth->getAccessToken([
-            'client_id' => $config['client_id'],
-            'client_secret' => $config['client_secret'],
+            'clientId' => $config['client_id'],
+            'clientSecret' => $config['client_secret'],
             'code' => $code,
-            'grant_type' => 'authorization_code'
+            'grantType' => 'authorization_code'
         ]);
-        
+
         error_log('Token received: ' . json_encode($accessToken, JSON_PRETTY_PRINT));
 
-        // Store the token using the session storage
-        $locationId = $accessToken->location_id ?? $accessToken->company_id;
-        if (!$locationId) {
+        $locationId = $accessToken->location_id ?? null;
+        $companyId = $accessToken->company_id ?? null;
+
+        // Sub-account install: the token response already carries a locationId,
+        // so store it and show the token straight away.
+        if ($locationId) {
+            $ghl->getSessionStorage()->setSession($locationId, new SessionData($accessToken));
+
+            $view = Twig::fromRequest($request);
+            return $view->render($response, 'token.twig', [
+                'token' => $accessToken,
+                'locationId' => $locationId,
+            ]);
+        }
+
+        // Company (agency) install: no locationId in the token (it's a company
+        // token). Store the company token, then show a loading screen that polls
+        // get-installed-location until location tokens can be generated.
+        if (!$companyId) {
             throw new Exception('No locationId or companyId found in token response');
         }
 
-        $ghl->getSessionStorage()->setSession($locationId, new SessionData($accessToken));
+        $ghl->getSessionStorage()->setSession($companyId, new SessionData($accessToken));
 
         $view = Twig::fromRequest($request);
-        return $view->render($response, 'token.twig', [
-            'token' => $accessToken
+        return $view->render($response, 'loading.twig', [
+            'companyId' => $companyId,
         ]);
     } catch (Exception $e) {
         error_log('Error fetching token: ' . $e->getMessage());
         return $response->withHeader('Location', '/error-page?msg=' . urlencode('Error fetching token: ' . $e->getMessage()))->withStatus(302);
     }
+});
+
+// Polled by loading.twig every 5s during a company (agency) install.
+// Resolves installed locations for the company token and generates a location
+// token for each one that doesn't already have one in storage.
+$app->get('/install-locations', function (Request $request, Response $response, array $args) use ($ghl, $config) {
+    $companyId = $request->getQueryParams()['companyId'] ?? null;
+
+    $respondJson = function (array $payload) use ($response) {
+        $response->getBody()->write(json_encode($payload));
+        return $response->withHeader('Content-Type', 'application/json');
+    };
+
+    if (!$companyId) {
+        return $respondJson(['ready' => false, 'error' => 'No companyId provided']);
+    }
+
+    try {
+        // GHL OAuth client id is "<appId>-<random>"; appId is the part before "-".
+        $appId = explode('-', $config['client_id'])[0];
+
+        // SDK auto-resolves the company token from storage via companyId.
+        $installed = $ghl->oauth->getInstalledLocation([
+            'companyId' => $companyId,
+            'appId' => $appId,
+            'isInstalled' => 'true',
+        ]);
+
+        $items = $installed->items ?? [];
+
+        $generated = [];
+        $available = [];
+        foreach ($items as $item) {
+            // InstalledLocationSchema "_id" maps to the model's $id property.
+            $locId = $item->id ?? null;
+            if (!$locId) {
+                continue;
+            }
+
+            // Token already exists for this location — skip generation.
+            if ($ghl->getSessionStorage()->getSession($locId)) {
+                $available[] = $locId;
+                continue;
+            }
+
+            // Generate a location token using the company token.
+            $locationToken = $ghl->oauth->getLocationAccessToken([
+                'companyId' => $companyId,
+                'locationId' => $locId,
+            ]);
+            $ghl->getSessionStorage()->setSession($locId, new SessionData($locationToken));
+            $generated[] = $locId;
+            $available[] = $locId;
+        }
+
+        // Prefer a location we just generated a token for; otherwise the first
+        // location that already had one. Keep polling until at least one exists.
+        $picked = $generated[0] ?? ($available[0] ?? null);
+
+        return $respondJson([
+            'ready' => $picked !== null,
+            'locationId' => $picked,
+            'generated' => $generated,
+            'count' => count($available),
+        ]);
+    } catch (Exception $e) {
+        error_log('Error resolving installed locations: ' . $e->getMessage());
+        // Keep the client polling on transient errors.
+        return $respondJson(['ready' => false, 'error' => $e->getMessage()]);
+    }
+});
+
+// Final screen for a company install: shows the company token + the location id
+// that was resolved/generated during polling.
+$app->get('/oauth-result', function (Request $request, Response $response, array $args) use ($ghl) {
+    $queryParams = $request->getQueryParams();
+    $companyId = $queryParams['companyId'] ?? null;
+    $locationId = $queryParams['locationId'] ?? null;
+
+    $token = $companyId ? $ghl->getSessionStorage()->getSession($companyId) : null;
+
+    $view = Twig::fromRequest($request);
+    return $view->render($response, 'token.twig', [
+        'token' => $token,
+        'locationId' => $locationId,
+    ]);
 });
 
 $app->get('/contact', function (Request $request, Response $response, array $args) use ($ghl) {
@@ -272,16 +374,17 @@ $app->get('/error-page', function (Request $request, Response $response, array $
     ]);
 });
 
-$webhookMiddleware = function (Request $request, RequestHandler $handler) use ($ghl, $config) {
+$webhookMiddleware = function (Request $request, RequestHandler $handler) use ($ghl) {
     $payload = $request->getBody()->getContents();
-    $signature = $request->getHeaderLine('x-wh-signature');
+    $whSig = $request->getHeaderLine('x-wh-signature') ?: null;   // RSA (legacy)
+    $ghlSig = $request->getHeaderLine('x-ghl-signature') ?: null; // Ed25519 (preferred)
 
-    // Process with your WebhookManager
-    $result = $ghl->getWebhookManager()->processWebhook($payload, $signature, $config['webhook_public_key'], $config['client_id']);
-    
+    // The SDK reads WEBHOOK_PUBLIC_KEY, WEBHOOK_SIGNATURE_PUBLIC_KEY, and CLIENT_ID from the environment.
+    $result = $ghl->getWebhookManager()->processWebhook($payload, $whSig, $ghlSig);
+
     // Add result to request attributes
     $request = $request->withAttribute('webhook_result', $result);
-    
+
     // Continue to next middleware/route
     return $handler->handle($request);
 };

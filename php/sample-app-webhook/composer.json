@@ -17,7 +17,10 @@
   "license": "MIT",
   "require": {
     "php": ">=8.1",
-    "gohighlevel/api-client": "1.0.0-beta",
+    "ext-json": "*",
+    "ext-mongodb": "*",
+    "gohighlevel/api-client": "^3.0",
+    "mongodb/mongodb": "^2.0",
     "monolog/monolog": "^3.0",
     "nyholm/psr7": "^1.8",
     "nyholm/psr7-server": "^1.1",
@@ -38,6 +41,6 @@
     "sort-packages": true,
     "process-timeout": 0
   },
-  "minimum-stability": "dev",
+  "minimum-stability": "stable",
   "prefer-stable": true
 }

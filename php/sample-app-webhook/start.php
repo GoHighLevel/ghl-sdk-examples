@@ -19,7 +19,7 @@ echo "Press Ctrl+C to stop the server\n\n";
 $xdebugEnabled = !empty($_ENV['XDEBUG_MODE']) && $_ENV['XDEBUG_MODE'] === 'debug';
 
 // Build PHP command with optional Xdebug parameters
-$phpCommand = 'php';
+$phpCommand = escapeshellarg(PHP_BINARY);
 if ($xdebugEnabled) {
     echo "Xdebug debugging enabled!\n";
     $xdebugArgs = [
@@ -33,6 +33,6 @@ if ($xdebugEnabled) {
 }
 
 // Start the PHP development server
-$command = "{$phpCommand} -S {$host}:{$port} public/index.php";
+$command = "{$phpCommand} -S {$host}:{$port} -t public public/index.php";
 echo "Running: {$command}\n\n";
 passthru($command);

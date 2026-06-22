@@ -98,12 +98,12 @@
             <div class="contact-info">
                 <div class="info-item">
                     <div class="info-label">First Name:</div>
-                    <div class="info-value">{{ contact.first_name|default('Not provided') }}</div>
+                    <div class="info-value">{{ contact.firstName|default('Not provided') }}</div>
                 </div>
                 
                 <div class="info-item">
                     <div class="info-label">Last Name:</div>
-                    <div class="info-value">{{ contact.last_name|default('Not provided') }}</div>
+                    <div class="info-value">{{ contact.lastName|default('Not provided') }}</div>
                 </div>
                 
                 <div class="info-item">
@@ -118,7 +118,7 @@
 
                 <div class="info-item">
                     <div class="info-label">Location:</div>
-                    <div class="info-value">{{ contact.location_id|default('Not provided') }}</div>
+                    <div class="info-value">{{ contact.locationId|default('Not provided') }}</div>
                 </div>
             </div>
         {% else %}
