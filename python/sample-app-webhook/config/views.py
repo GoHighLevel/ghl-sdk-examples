@@ -71,7 +71,7 @@ async def install(request):
     authorization_url = ghl.oauth.get_authorization_url(
         settings.CLIENT_ID,
         redirect_uri,
-        'contacts.readonly contacts.write'
+        'contacts.readonly contacts.write oauth.readonly oauth.write'
     )
     print('Redirect URL:', authorization_url)
     return redirect(authorization_url)
@@ -87,22 +87,115 @@ async def oauth_callback(request):
         if ghl is None:
             await initialize_ghl()
         access_token_data = await ghl.oauth.get_access_token({
-            'client_id': settings.CLIENT_ID,
-            'client_secret': settings.CLIENT_SECRET,
+            'clientId': settings.CLIENT_ID,
+            'clientSecret': settings.CLIENT_SECRET,
             'code': code,
-            'grant_type': 'authorization_code',
+            'grantType': 'authorization_code',
         })
         print('Token:', access_token_data)
 
-        await ghl.get_session_storage().set_session(access_token_data['locationId'], access_token_data)
-        return render(request, 'token.html', {
-            'token': access_token_data,
-            'location_id': access_token_data['locationId']
+        location_id = access_token_data.get('locationId')
+        if location_id:
+            await ghl.get_session_storage().set_session(location_id, access_token_data)
+            return render(request, 'token.html', {
+                'token': access_token_data,
+                'location_id': location_id
+            })
+
+        # Company (agency) level install: store the company token and poll for a
+        # location token via the loading page.
+        company_id = access_token_data.get('companyId')
+        if not company_id:
+            return redirect(reverse('error_page') + '?msg=Token response had neither locationId nor companyId')
+
+        await ghl.get_session_storage().set_session(company_id, access_token_data)
+        # Make the agency (company) token available to the agency-scoped polling calls
+        # directly via config (checked before storage). Cleared once a location resolves.
+        ghl.update_config({
+            'agency_access_token': access_token_data.get('accessToken') or access_token_data.get('access_token')
         })
+        return render(request, 'loading.html', {'company_id': company_id})
     except Exception as err:
         print('Error fetching token:', err)
         traceback.print_exc()
         return redirect(reverse('error_page') + f'?msg=Error fetching token: {str(err)}')
+
+async def install_locations(request):
+    """Poll endpoint: resolve a location token from the company token (JSON)."""
+    global ghl
+    if ghl is None:
+        await initialize_ghl()
+
+    company_id = request.GET.get('companyId')
+    if not company_id:
+        return JsonResponse({'ready': False, 'error': 'No companyId provided'})
+
+    try:
+        app_id = (settings.CLIENT_ID or '').split('-')[0]
+        installed = await ghl.oauth.get_installed_location(
+            company_id=company_id,
+            app_id=app_id,
+            is_installed=True,
+            options={'headers': {'companyId': company_id}}
+        )
+        items = installed.get('items', []) if isinstance(installed, dict) else []
+
+        resolved_location_id = None
+        for item in items:
+            location_id = item.get('_id')
+            if not location_id:
+                continue
+
+            existing = await ghl.get_session_storage().get_session(location_id)
+            if not existing:
+                location_token = await ghl.oauth.get_location_access_token(
+                    request_body={'companyId': company_id, 'locationId': location_id},
+                    options={'headers': {'companyId': company_id}}
+                )
+                # The location-token response is camelCase; normalize the keys the
+                # SDK reads (access_token / refresh_token) before storing.
+                await ghl.get_session_storage().set_session(location_id, {
+                    **location_token,
+                    'access_token': location_token.get('accessToken'),
+                    'refresh_token': location_token.get('refreshToken'),
+                    'companyId': company_id,
+                    'locationId': location_id,
+                    'userType': 'Location',
+                })
+
+            resolved_location_id = resolved_location_id or location_id
+
+        if resolved_location_id:
+            # Stop using the agency token now that a location token is stored, so
+            # subsequent location-scoped calls (e.g. /contact) use the location token.
+            ghl.update_config({'agency_access_token': None})
+            return JsonResponse({'ready': True, 'locationId': resolved_location_id})
+        return JsonResponse({'ready': False})
+    except Exception as error:
+        print('Error resolving location token:', error)
+        traceback.print_exc()
+        return JsonResponse({'ready': False, 'error': str(error)})
+
+
+async def oauth_result(request):
+    """Show the resolved location token after the loading/polling step."""
+    global ghl
+    if ghl is None:
+        await initialize_ghl()
+
+    company_id = request.GET.get('companyId')
+    location_id = request.GET.get('locationId')
+
+    token = None
+    if location_id:
+        token = await ghl.get_session_storage().get_session(location_id)
+    if not token and company_id:
+        token = await ghl.get_session_storage().get_session(company_id)
+
+    if not token:
+        return redirect(reverse('error_page') + '?msg=No session found for the resolved location')
+    return render(request, 'token.html', {'token': token, 'location_id': location_id})
+
 
 async def contact(request):
     """Handle contact retrieval"""
@@ -123,18 +216,18 @@ async def contact(request):
         global ghl
         if ghl is None:
             await initialize_ghl()
-        contacts_data = await ghl.contacts.get_contacts(resource_id, None, None, None, 5)
-        print('Fetched contacts:', contacts_data['contacts'])
+        search_result = await ghl.contacts.search_contacts_advanced(
+            request_body={'locationId': resource_id, 'pageLimit': 5},
+            options={'headers': {'locationId': resource_id}}
+        )
+        contacts = search_result.get('contacts', []) if isinstance(search_result, dict) else []
+        print('Fetched contacts:', contacts)
 
-        contacts = contacts_data.get('contacts', [])
         if not contacts:
             return redirect(reverse('error_page') + '?msg=No contacts found')
 
         contact_id = contacts[0]['id']
-        if not contact_id:
-            return redirect(reverse('error_page') + '?msg=No contact found')
-
-        contact_data = await ghl.contacts.get_contact(contact_id, {'headers': {'locationId': resource_id}})
+        contact_data = await ghl.contacts.get_contact(contact_id, options={'headers': {'locationId': resource_id}})
         return render(request, 'contact.html', {'contact': contact_data.get('contact')})
 
     except Exception as error:
@@ -165,7 +258,7 @@ async def refresh_token(request):
             settings.CLIENT_ID,
             settings.CLIENT_SECRET,
             'refresh_token',
-            token_details.get('user_type', 'Location')
+            token_details.get('userType', 'Location')
         )
         await ghl.get_session_storage().set_session(resource_id, refreshed_token)
         return render(request, 'token.html', {
@@ -193,6 +286,7 @@ async def webhook(request):
 
         if getattr(request, 'is_signature_valid', False):
             print('Signature valid...., processing webhook data...')
+            print('Signature type:', getattr(request, 'signature_type'))
             return JsonResponse({
                 'status': 'success',
                 'message': 'Webhook processed successfully',

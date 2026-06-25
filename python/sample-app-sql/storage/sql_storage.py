@@ -57,6 +57,14 @@ class SqlStorage(SessionStorage):
         """Set the client ID"""
         self.client_id = client_id
 
+    def _get_application_id(self) -> Optional[str]:
+        """Application id is the stable prefix of the client_id (before the '-').
+        Sessions are scoped to it so a client secret/suffix change does not orphan
+        them — matching the memory and MongoDB storages."""
+        if not self.client_id:
+            return None
+        return self.client_id.split("-")[0]
+
     async def init(self) -> None:
         """
         Initialize database connection and create tables
@@ -78,7 +86,7 @@ class SqlStorage(SessionStorage):
             self.logger.debug('SqlStorage: Database connection established')
 
             # Create default sessions table
-            self.create_collection(self.default_collection)
+            await self.create_collection(self.default_collection)
 
         except pymysql.Error as e:
             self.logger.error(f'SqlStorage: Failed to connect to database: {e}')
@@ -147,6 +155,7 @@ class SqlStorage(SessionStorage):
             Exception: If storage fails
         """
         try:
+            session_data = self.normalize_session_data(session_data)
             expire_at = None
             if session_data.get('expires_in'):
                 expire_at = self._calculate_expire_at(session_data.get('expires_in'))
@@ -171,7 +180,7 @@ class SqlStorage(SessionStorage):
 
                 cursor.execute(sql, [
                     resource_id,
-                    self.client_id,
+                    self._get_application_id(),
                     session_data.get('access_token'),
                     session_data.get('refresh_token'),
                     session_data.get('token_type'),
@@ -201,7 +210,7 @@ class SqlStorage(SessionStorage):
         try:
             with self.client.cursor(pymysql.cursors.DictCursor) as cursor:
                 sql = f"SELECT * FROM `{self.default_collection}` WHERE resource_id = %s AND (client_id = %s OR client_id IS NULL)"
-                cursor.execute(sql, [resource_id, self.client_id])
+                cursor.execute(sql, [resource_id, self._get_application_id()])
                 row = cursor.fetchone()
 
                 if not row:
@@ -236,7 +245,7 @@ class SqlStorage(SessionStorage):
         try:
             with self.client.cursor() as cursor:
                 sql = f"DELETE FROM `{self.default_collection}` WHERE resource_id = %s AND (client_id = %s OR client_id IS NULL)"
-                cursor.execute(sql, [resource_id, self.client_id])
+                cursor.execute(sql, [resource_id, self._get_application_id()])
 
             self.logger.debug(f"SqlStorage: Session deleted for resource ID: {resource_id}")
 
@@ -256,7 +265,7 @@ class SqlStorage(SessionStorage):
         try:
             with self.client.cursor() as cursor:
                 sql = f"SELECT access_token FROM `{self.default_collection}` WHERE resource_id = %s AND (client_id = %s OR client_id IS NULL)"
-                cursor.execute(sql, [resource_id, self.client_id])
+                cursor.execute(sql, [resource_id, self._get_application_id()])
                 row = cursor.fetchone()
 
                 return row[0] if row else None
@@ -278,7 +287,7 @@ class SqlStorage(SessionStorage):
         try:
             with self.client.cursor() as cursor:
                 sql = f"SELECT refresh_token FROM `{self.default_collection}` WHERE resource_id = %s AND (client_id = %s OR client_id IS NULL)"
-                cursor.execute(sql, [resource_id, self.client_id])
+                cursor.execute(sql, [resource_id, self._get_application_id()])
                 row = cursor.fetchone()
 
                 return row[0] if row else None
@@ -297,7 +306,7 @@ class SqlStorage(SessionStorage):
         try:
             with self.client.cursor(pymysql.cursors.DictCursor) as cursor:
                 sql = f"SELECT * FROM `{self.default_collection}` WHERE client_id = %s"
-                cursor.execute(sql, [self.client_id])
+                cursor.execute(sql, [self._get_application_id()])
                 rows = cursor.fetchall()
 
                 sessions = []

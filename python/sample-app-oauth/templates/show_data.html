@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SDK Data — GHL OAuth Example</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 1100px;
+        margin: 30px auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .page-header {
+        text-align: center;
+        margin-bottom: 10px;
+      }
+      .page-title { font-size: 2rem; color: #333; }
+      .page-subtitle { color: #666; font-size: 0.95rem; margin-top: 6px; word-break: break-all; }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 18px;
+        margin-top: 24px;
+      }
+      .card {
+        background-color: #fff;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        border-top: 4px solid #007bff;
+      }
+      .card h3 {
+        margin: 0 0 14px;
+        font-size: 1.1rem;
+        color: #222;
+      }
+      .row {
+        display: flex;
+        gap: 10px;
+        padding: 6px 0;
+        border-bottom: 1px solid #f0f0f0;
+        font-size: 0.9rem;
+      }
+      .row:last-child { border-bottom: none; }
+      .key { color: #555; font-weight: 600; min-width: 110px; text-transform: capitalize; }
+      .val { color: #222; flex: 1; word-break: break-word; font-family: 'Courier New', monospace; }
+      .empty { color: #999; font-style: italic; padding: 6px 0; }
+      .error { color: #b02a37; font-size: 0.82rem; padding: 6px 0; word-break: break-word; }
+      .card.has-error { border-top-color: #dc3545; }
+      .card.no-data { border-top-color: #adb5bd; }
+      .back-btn { text-align: center; margin-top: 30px; }
+      .btn {
+        display: inline-block; padding: 12px 24px; background-color: #6c757d; color: #fff;
+        text-decoration: none; border-radius: 5px; font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page-header">
+      <div class="page-title">📊 SDK Data</div>
+      <div class="page-subtitle">One read-only call per service · Location ID: {{ location_id }}</div>
+    </div>
+
+    <div class="grid">
+      {% for section in sections %}
+        <div class="card{% if section.error %} has-error{% elif not section.fields %} no-data{% endif %}">
+          <h3>{{ section.label }}</h3>
+          {% if section.fields %}
+            {% for key, value in section.fields %}
+              <div class="row">
+                <div class="key">{{ key }}</div>
+                <div class="val">{{ value }}</div>
+              </div>
+            {% endfor %}
+          {% elif section.error %}
+            <div class="error">⚠️ {{ section.error }}</div>
+          {% else %}
+            <div class="empty">No data found</div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="back-btn">
+      <a class="btn" href="/">← Back to Home</a>
+    </div>
+  </body>
+</html>

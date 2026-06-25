@@ -128,17 +128,17 @@
 
       {% if token %}
         <div class="token-info">
-          {% if token.access_token %}
+          {% if token.accessToken %}
             <div class="info-item">
               <div class="info-label">Access Token</div>
-              <div class="info-value">{{ token.access_token }}</div>
+              <div class="info-value">{{ token.accessToken }}</div>
             </div>
           {% endif %}
 
-          {% if token.refresh_token %}
+          {% if token.refreshToken %}
             <div class="info-item">
               <div class="info-label">Refresh Token</div>
-              <div class="info-value">{{ token.refresh_token }}</div>
+              <div class="info-value">{{ token.refreshToken }}</div>
             </div>
           {% endif %}
 
@@ -164,9 +164,10 @@
           {% endif %}
         </div>
 
+        {% set resolved_location_id = location_id or token.locationId %}
         <div class="action-buttons">
-          <a class="btn btn-primary" href="/contact?resourceId={{ token.locationId }}">👤 Show Contact</a>
-          <a class="btn btn-primary" href="/refresh-token?resourceId={{ token.locationId }}">🔄 Refresh Token</a>
+          <a class="btn btn-primary" href="/contact?resourceId={{ resolved_location_id }}">👤 Show Contact</a>
+          <a class="btn btn-primary" href="/refresh-token?resourceId={{ resolved_location_id }}">🔄 Refresh Token</a>
           <a class="btn btn-secondary" href="/">← Back to Home</a>
         </div>
       {% else %}

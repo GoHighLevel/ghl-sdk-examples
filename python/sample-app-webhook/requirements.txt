@@ -2,4 +2,4 @@ Django>=5.0.0
 djangorestframework>=3.15.0
 uvicorn>=0.24.0
 python-dotenv>=0.19.0
-gohighlevel-api-client==1.0.0b1
+gohighlevel-api-client>=3.0.0
